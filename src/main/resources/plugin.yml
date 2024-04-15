@@ -1,0 +1,4 @@
+name: SignWarp
+version: '${project.version}'
+main: fr.nbstudio.signwarp.SignWarp
+api-version: '1.20'
