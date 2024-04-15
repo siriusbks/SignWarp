@@ -1,4 +1,24 @@
 name: SignWarp
 version: '${project.version}'
-main: fr.nbstudio.signwarp.SignWarp
+description: Warp tp plugin on signs
+author: SiriusB_
 api-version: '1.20'
+main: fr.nbstudio.signwarp.SignWarp
+commands:
+  signwarp:
+    description: "Reload the SignWarp configuration"
+    usage: "/signwarp reload"
+permissions:
+  signwarp.*:
+    children:
+      - signwarp.create
+      - signwarp.use
+  signwarp.create:
+    description: "Allows you to create warp signs"
+    default: op
+  signwarp.use:
+    description: "Allow uses of warp signs"
+    default: true
+  signwarp.reload:
+    description: "Allows you to reload the SignWarp configuration"
+    default: op
