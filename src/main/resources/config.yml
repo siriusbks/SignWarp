@@ -4,6 +4,13 @@ use-item: ENDER_PEARL
 # Number of items consumed by using a warp sign
 use-cost: 1
 
+# Sound played when teleporting
+teleport-sound: ENTITY_ENDERMAN_TELEPORT
+
+# Effect displayed when teleporting
+teleport-effect: ENDER_SIGNAL
+
+
 # Custom messages
 messages:
   create_permission: "&cYou do not have the required permissions to create warp signs!"

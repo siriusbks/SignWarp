@@ -237,9 +237,15 @@ public class EventListener implements Listener {
 
         player.teleport(targetLocation);
 
+        String soundName = config.getString("teleport-sound", "ENTITY_ENDERMAN_TELEPORT");
+        String effectName = config.getString("teleport-effect", "ENDER_SIGNAL");
+
+        Sound sound = Sound.valueOf(soundName);
+        Effect effect = Effect.valueOf(effectName);
+
         World world = targetLocation.getWorld();
-        world.playSound(targetLocation, Sound.ENTITY_ENDERMAN_TELEPORT, 1, 1);
-        world.playEffect(targetLocation, Effect.ENDER_SIGNAL, 10);
+        world.playSound(targetLocation, sound, 1, 1);
+        world.playEffect(targetLocation, effect, 10);
 
         String teleportMessage = config.getString("messages.teleport");
         if (teleportMessage != null) {
