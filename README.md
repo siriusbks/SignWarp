@@ -65,6 +65,19 @@ messages:
 - `{use-cost}` : This placeholder is replaced by the number of items needed to use the warp. For example, if the cost to use the warp is 1 ender pearl, this placeholder will be replaced by "1".
 
 You have the option to stylize your texts with Minecraft color codes. These codes start with the & character, followed by a letter or number representing a specific color. [More informations](https://www.digminecraft.com/lists/color_list_pc.php)
+
+## Sound and Effect Customization
+
+You can customize the sound and effect played during teleportation in the `config.yml` configuration file:
+[List Sound](https://www.digminecraft.com/lists/sound_list_pc.php) and [List Effect](https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Effect.html)
+
+**Note : The sound and effect must be in uppercase and replace "." by "_" for the sound.**
+
+**Preview :**
+```yaml
+teleport-sound: ENTITY_ENDERMAN_TELEPORT
+teleport-effect: ENDER_SIGNAL
+```
 ## Screenshot
 
 ![Plugin Screenshot](https://i.imgur.com/vrdM5sD.png)
