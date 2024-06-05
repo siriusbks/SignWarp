@@ -23,12 +23,10 @@ public class EventListener implements Listener {
     EventListener(SignWarp plugin) {
         this.plugin = plugin;
         this.config = plugin.getConfig();
-
     }
 
     @EventHandler
     public void onPluginEnable(PluginEnableEvent event) {
-
     }
 
     @EventHandler
@@ -59,7 +57,7 @@ public class EventListener implements Listener {
             return;
         }
 
-        Warp existingWarp = Warp.getByName(plugin.getConfig(), plugin, signData.warpName);
+        Warp existingWarp = Warp.getByName(signData.warpName);
 
         if (signData.isWarp()) {
             if (existingWarp == null) {
@@ -87,7 +85,7 @@ public class EventListener implements Listener {
                 return;
             }
 
-            Warp warp = new Warp(plugin.getConfig(), plugin, signData.warpName, player.getLocation());
+            Warp warp = new Warp(signData.warpName, player.getLocation());
             warp.save();
 
             event.setLine(0, ChatColor.BLUE + SignData.HEADER_TARGET);
@@ -108,7 +106,6 @@ public class EventListener implements Listener {
             if (hasBlockWarpSign(block)) {
                 event.setCancelled(true);
             }
-
             return;
         }
 
@@ -139,7 +136,7 @@ public class EventListener implements Listener {
             return;
         }
 
-        Warp warp = Warp.getByName(plugin.getConfig(), plugin, signData.warpName);
+        Warp warp = Warp.getByName(signData.warpName);
 
         if (warp == null) {
             return;
@@ -189,8 +186,6 @@ public class EventListener implements Listener {
             return;
         }
 
-        FileConfiguration config = plugin.getConfig();
-
         String useItem = config.getString("use-item", "none");
         int useCost = config.getInt("use-cost", 0);
 
@@ -219,7 +214,7 @@ public class EventListener implements Listener {
             }
         }
 
-        Warp warp = Warp.getByName(config, plugin, signData.warpName);
+        Warp warp = Warp.getByName(signData.warpName);
 
         if (warp == null) {
             String warpNotFoundMessage = config.getString("messages.warp_not_found");
@@ -291,7 +286,6 @@ public class EventListener implements Listener {
 
     private boolean isWarpSign(Sign signBlock) {
         SignData signData = new SignData(signBlock.getSide(Side.FRONT).getLines());
-
         return signData.isWarpSign();
     }
 }

@@ -1,95 +1,127 @@
 package fr.nbstudio.signwarp;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
-import java.io.IOException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Warp {
-    private final FileConfiguration fileConfiguration;
-    private final JavaPlugin plugin;
-    private String warpName;
-    private Location location;
+    private static final String DB_URL = "jdbc:sqlite:" + JavaPlugin.getPlugin(SignWarp.class).getDataFolder() + File.separator + "warps.db";
+    private final String warpName;
+    private final Location location;
 
-    Warp(FileConfiguration fileConfiguration, JavaPlugin plugin, String warpName, Location location) {
-        this.fileConfiguration = fileConfiguration;
-        this.plugin = plugin;
+    public Warp(String warpName, Location location) {
         this.warpName = warpName;
         this.location = location;
     }
 
-    private static String getConfigPath(String warpName) {
-        return "warps." + warpName;
+    public String getName() {
+        return warpName;
     }
 
-    static Warp getByName(FileConfiguration fileConfiguration, JavaPlugin plugin, String warpName) {
-        ConfigurationSection configurationSection = fileConfiguration.getConfigurationSection(getConfigPath(warpName));
-
-        if (configurationSection == null) {
-            return null;
-        }
-
-        World world = plugin.getServer().getWorld(configurationSection.getString("world"));
-        double posX = configurationSection.getDouble("x");
-        double posY = configurationSection.getDouble("y");
-        double posZ = configurationSection.getDouble("z");
-        double yaw = configurationSection.getDouble("yaw");
-        double pitch = configurationSection.getDouble("pitch");
-
-        Location location = new Location(world, posX, posY, posZ, (float) yaw, (float) pitch);
-
-        return new Warp(fileConfiguration, plugin, warpName, location);
-    }
-
-    static List<Warp> getAll(FileConfiguration fileConfiguration, JavaPlugin plugin) {
-        ConfigurationSection warpsConfig = fileConfiguration.getConfigurationSection("warps");
-
-        List<Warp> warps = new ArrayList<>();
-
-        if (warpsConfig != null) {
-            for (String warpName : warpsConfig.getKeys(false)) {
-                warps.add(getByName(fileConfiguration, plugin, warpName));
-            }
-        }
-
-        return warps;
-    }
-
-    void save() throws IOException {
-        String configPath = getConfigPath(warpName);
-        ConfigurationSection configurationSection = fileConfiguration.getConfigurationSection(configPath);
-
-        if (configurationSection == null) {
-            configurationSection = fileConfiguration.createSection(configPath);
-        }
-
-        configurationSection.set("world", location.getWorld().getName());
-        configurationSection.set("x", location.getX());
-        configurationSection.set("y", location.getY());
-        configurationSection.set("z", location.getZ());
-        configurationSection.set("yaw", location.getYaw());
-        configurationSection.set("pitch", location.getPitch());
-
-        fileConfiguration.save(plugin.getDataFolder() + File.separator + "config.yml");
-    }
-
-    void remove() throws IOException {
-        fileConfiguration.set(getConfigPath(warpName), null);
-
-        fileConfiguration.save(plugin.getDataFolder() + File.separator + "config.yml");
-    }
-
-    Location getLocation() {
+    public Location getLocation() {
         return location;
     }
 
-    String getName() {
-        return warpName;
+    public void save() {
+        try (Connection conn = DriverManager.getConnection(DB_URL)) {
+            String sql = "INSERT OR REPLACE INTO warps (name, world, x, y, z, yaw, pitch) VALUES (?, ?, ?, ?, ?, ?, ?)";
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setString(1, warpName);
+                pstmt.setString(2, location.getWorld().getName());
+                pstmt.setDouble(3, location.getX());
+                pstmt.setDouble(4, location.getY());
+                pstmt.setDouble(5, location.getZ());
+                pstmt.setFloat(6, location.getYaw());
+                pstmt.setFloat(7, location.getPitch());
+                pstmt.executeUpdate();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void remove() {
+        try (Connection conn = DriverManager.getConnection(DB_URL)) {
+            String sql = "DELETE FROM warps WHERE name = ?";
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setString(1, warpName);
+                pstmt.executeUpdate();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static Warp getByName(String warpName) {
+        try (Connection conn = DriverManager.getConnection(DB_URL)) {
+            String sql = "SELECT * FROM warps WHERE name = ?";
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setString(1, warpName);
+                ResultSet rs = pstmt.executeQuery();
+                if (rs.next()) {
+                    String worldName = rs.getString("world");
+                    World world = Bukkit.getWorld(worldName);
+                    double x = rs.getDouble("x");
+                    double y = rs.getDouble("y");
+                    double z = rs.getDouble("z");
+                    float yaw = rs.getFloat("yaw");
+                    float pitch = rs.getFloat("pitch");
+                    Location location = new Location(world, x, y, z, yaw, pitch);
+                    return new Warp(warpName, location);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static List<Warp> getAll() {
+        List<Warp> warps = new ArrayList<>();
+        try (Connection conn = DriverManager.getConnection(DB_URL)) {
+            String sql = "SELECT * FROM warps";
+            try (Statement stmt = conn.createStatement()) {
+                ResultSet rs = stmt.executeQuery(sql);
+                while (rs.next()) {
+                    String name = rs.getString("name");
+                    String worldName = rs.getString("world");
+                    World world = Bukkit.getWorld(worldName);
+                    double x = rs.getDouble("x");
+                    double y = rs.getDouble("y");
+                    double z = rs.getDouble("z");
+                    float yaw = rs.getFloat("yaw");
+                    float pitch = rs.getFloat("pitch");
+                    Location location = new Location(world, x, y, z, yaw, pitch);
+                    warps.add(new Warp(name, location));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return warps;
+    }
+
+    public static void createTable() {
+        try (Connection conn = DriverManager.getConnection(DB_URL)) {
+            String sql = "CREATE TABLE IF NOT EXISTS warps (" +
+                    "name TEXT PRIMARY KEY, " +
+                    "world TEXT, " +
+                    "x REAL, " +
+                    "y REAL, " +
+                    "z REAL, " +
+                    "yaw REAL, " +
+                    "pitch REAL)";
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute(sql);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 }
