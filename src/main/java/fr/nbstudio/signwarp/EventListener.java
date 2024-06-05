@@ -12,17 +12,23 @@ import org.bukkit.event.block.*;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.server.PluginEnableEvent;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.IOException;
 import java.util.List;
 
 public class EventListener implements Listener {
     private final SignWarp plugin;
-    private final FileConfiguration config;
+    private static FileConfiguration config;
 
     EventListener(SignWarp plugin) {
         this.plugin = plugin;
         this.config = plugin.getConfig();
+    }
+
+    // method static to update the config
+    public static void updateConfig(JavaPlugin plugin) {
+        config = plugin.getConfig();
     }
 
     @EventHandler

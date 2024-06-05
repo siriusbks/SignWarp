@@ -13,7 +13,7 @@ import java.util.List;
 
 public class SWReloadCommand implements CommandExecutor, TabCompleter {
     private final JavaPlugin plugin;
-    private final FileConfiguration config;
+    private FileConfiguration config;
 
     public SWReloadCommand(JavaPlugin plugin) {
         this.plugin = plugin;
@@ -25,12 +25,13 @@ public class SWReloadCommand implements CommandExecutor, TabCompleter {
         if (args.length == 1 && args[0].equalsIgnoreCase("reload")) {
 
             if (!sender.hasPermission("signwarp.reload")) {
-                String notPermissionMessage = config.getString("messages.not_permission");
+                String notPermissionMessage = plugin.getConfig().getString("messages.not_permission");
                 sender.sendMessage(ChatColor.translateAlternateColorCodes('&', notPermissionMessage));
                 return true;
             }
 
             plugin.reloadConfig();
+            EventListener.updateConfig(plugin);
             sender.sendMessage(ChatColor.GREEN + "SW - Reload complete!");
             return true;
         }
