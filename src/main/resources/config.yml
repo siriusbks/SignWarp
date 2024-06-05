@@ -10,7 +10,6 @@ teleport-sound: ENTITY_ENDERMAN_TELEPORT
 # Effect displayed when teleporting
 teleport-effect: ENDER_SIGNAL
 
-
 # Custom messages
 messages:
   create_permission: "&cYou do not have the required permissions to create warp signs!"
@@ -26,6 +25,3 @@ messages:
   use_permission: "&cYou do not have the required permissions to use the warp sign!"
   teleport: "&eTeleporting to {warp-name}..."
   not_permission: "&cYou do not have permission!"
-
-# List of all created warps
-warps:
