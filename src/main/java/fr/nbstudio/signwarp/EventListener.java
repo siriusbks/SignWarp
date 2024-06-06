@@ -11,19 +11,24 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.*;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.server.PluginEnableEvent;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.UUID;
 
 public class EventListener implements Listener {
     private final SignWarp plugin;
     private static FileConfiguration config;
+    private final HashMap<UUID, BukkitTask> teleportTasks = new HashMap<>();
 
     EventListener(SignWarp plugin) {
         this.plugin = plugin;
-        this.config = plugin.getConfig();
+        config = plugin.getConfig();
     }
 
     // method static to update the config
@@ -185,7 +190,7 @@ public class EventListener implements Listener {
         Player player = event.getPlayer();
 
         if (!player.hasPermission("signwarp.use")) {
-            String noPermissionMessage = config.getString("messages.warp_use_permission");
+            String noPermissionMessage = config.getString("messages.use_permission");
             if (noPermissionMessage != null) {
                 player.sendMessage(ChatColor.translateAlternateColorCodes('&', noPermissionMessage));
             }
@@ -195,7 +200,7 @@ public class EventListener implements Listener {
         String useItem = config.getString("use-item", "none");
         int useCost = config.getInt("use-cost", 0);
 
-        // "none" should be equally to null
+        // "none" should be equal to null
         if (useItem != null && useItem.equalsIgnoreCase("none")) {
             useItem = null;
         }
@@ -234,23 +239,69 @@ public class EventListener implements Listener {
             event.getItem().setAmount(event.getItem().getAmount() - useCost);
         }
 
-        Location targetLocation = warp.getLocation();
-
-        player.teleport(targetLocation);
-
-        String soundName = config.getString("teleport-sound", "ENTITY_ENDERMAN_TELEPORT");
-        String effectName = config.getString("teleport-effect", "ENDER_SIGNAL");
-
-        Sound sound = Sound.valueOf(soundName);
-        Effect effect = Effect.valueOf(effectName);
-
-        World world = targetLocation.getWorld();
-        world.playSound(targetLocation, sound, 1, 1);
-        world.playEffect(targetLocation, effect, 10);
+        int cooldown = config.getInt("teleport-cooldown", 5);
 
         String teleportMessage = config.getString("messages.teleport");
         if (teleportMessage != null) {
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&', teleportMessage.replace("{warp-name}", warp.getName())));
+            player.sendMessage(ChatColor.translateAlternateColorCodes('&', teleportMessage.replace("{warp-name}", warp.getName()).replace("{time}", String.valueOf(cooldown))));
+        }
+
+        UUID playerUUID = player.getUniqueId();
+
+        // Cancel any previous teleport tasks for the player
+        BukkitTask previousTask = teleportTasks.get(playerUUID);
+        if (previousTask != null) {
+            previousTask.cancel();
+        }
+
+        // Schedule the new teleport task
+        BukkitTask teleportTask = Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            Location targetLocation = warp.getLocation();
+            player.teleport(targetLocation);
+
+            String soundName = config.getString("teleport-sound", "ENTITY_ENDERMAN_TELEPORT");
+            String effectName = config.getString("teleport-effect", "ENDER_SIGNAL");
+
+            Sound sound = Sound.valueOf(soundName);
+            Effect effect = Effect.valueOf(effectName);
+
+            World world = targetLocation.getWorld();
+            world.playSound(targetLocation, sound, 1, 1);
+            world.playEffect(targetLocation, effect, 10);
+
+            String successMessage = config.getString("messages.teleport-success");
+            if (successMessage != null) {
+                player.sendMessage(ChatColor.translateAlternateColorCodes('&', successMessage.replace("{warp-name}", warp.getName())));
+            }
+
+            // Remove the task from the map after completion
+            teleportTasks.remove(playerUUID);
+        }, cooldown * 20L); // 20 ticks = 1 second
+
+        // Store the task in the map
+        teleportTasks.put(playerUUID, teleportTask);
+    }
+
+    @EventHandler
+    public void onPlayerMove(PlayerMoveEvent event) {
+        Player player = event.getPlayer();
+        UUID playerUUID = player.getUniqueId();
+
+        // Check if there is a pending teleport task for the player
+        if (teleportTasks.containsKey(playerUUID)) {
+            // If the player has moved, cancel the teleportation
+            Location from = event.getFrom();
+            Location to = event.getTo();
+
+            if (from.getX() != to.getX() || from.getY() != to.getY() || from.getZ() != to.getZ()) {
+                BukkitTask teleportTask = teleportTasks.get(playerUUID);
+                if (teleportTask != null) {
+                    teleportTask.cancel();
+                    teleportTasks.remove(playerUUID);
+                    String cancelMessage = config.getString("messages.teleport-cancelled", "&cTeleportation cancelled.");
+                    player.sendMessage(ChatColor.translateAlternateColorCodes('&', cancelMessage));
+                }
+            }
         }
     }
 

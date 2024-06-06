@@ -4,6 +4,9 @@ use-item: ENDER_PEARL
 # Number of items consumed by using a warp sign
 use-cost: 1
 
+# Time in seconds before teleporting
+teleport-cooldown: 5
+
 # Sound played when teleporting
 teleport-sound: ENTITY_ENDERMAN_TELEPORT
 
@@ -23,5 +26,7 @@ messages:
   not_enough_item: "&cYou need {use-cost} {use-item} for this warp!"
   warp_not_found: "&cSpecified warp does not exist!"
   use_permission: "&cYou do not have the required permissions to use the warp sign!"
-  teleport: "&eTeleporting to {warp-name}..."
+  teleport: "&eTeleporting to {warp-name} in {time} seconds..."
+  teleport-success: "&aSuccessfully teleported to {warp-name}."
+  teleport-cancelled: "&cTeleport cancelled."
   not_permission: "&cYou do not have permission!"
