@@ -19,7 +19,7 @@ Commands:
 
 First, place a sign where you want to teleport with the following content:
 
-- First line: **[WarpTarget]**
+- First line: **[WarpTarget]** or **[WPT]**
 - Second line: The name you want to use
 
 This will create a warp sign that sets the location to which a player teleports.
@@ -28,7 +28,7 @@ After creating the warp sign, create one or more warp signs from which you want 
 
 This is done by placing a sign with the following content:
 
-- First line: **[Warp]**
+- First line: **[Warp]** or **[WP]**
 - Second line: The name you want to use
 
 **Note: The target sign (WarpTarget) must exist before creating the warp sign!**
@@ -56,13 +56,16 @@ messages:
   not_enough_item: "&cYou need {use-cost} {use-item} for this warp!"
   warp_not_found: "&cSpecified warp does not exist!"
   use_permission: "&cYou do not have the required permissions to use the warp sign!"
-  teleport: "&eTeleporting to {warp-name}..."
+  teleport: "&eTeleporting to {warp-name} in {time} seconds..."
+  teleport-success: "&aSuccessfully teleported to {warp-name}."
+  teleport-cancelled: "&cTeleport cancelled."
   not_permission: "&cYou do not have permission!"
   ```
 
 - `{warp-name}` : This placeholder is replaced by the name of the warp specified on the sign.
 - `{use-item}` : Used to represent the name of the item required to use the warp. For example, if the required item is an ender pearl, this placeholder will be replaced by "ENDER_PEARL".
 - `{use-cost}` : This placeholder is replaced by the number of items needed to use the warp. For example, if the cost to use the warp is 1 ender pearl, this placeholder will be replaced by "1".
+- `{time}` : This placeholder is replaced by the time in seconds before the teleportation is completed.
 
 You have the option to stylize your texts with Minecraft color codes. These codes start with the & character, followed by a letter or number representing a specific color. [More informations](https://www.digminecraft.com/lists/color_list_pc.php)
 
