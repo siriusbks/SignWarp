@@ -85,3 +85,6 @@ teleport-effect: ENDER_SIGNAL
 
 ![Plugin Screenshot](https://i.imgur.com/vrdM5sD.png)
 
+## Statistics (bstats.org)
+
+![Stats](https://bstats.org/signatures/bukkit/SignWarps.svg)
