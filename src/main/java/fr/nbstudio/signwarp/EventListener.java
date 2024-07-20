@@ -10,6 +10,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.*;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
@@ -19,6 +20,7 @@ import org.bukkit.scheduler.BukkitTask;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 
@@ -26,6 +28,7 @@ public class EventListener implements Listener {
     private final SignWarp plugin;
     private static FileConfiguration config;
     private final HashMap<UUID, BukkitTask> teleportTasks = new HashMap<>();
+    private final HashSet<UUID> invinciblePlayers = new HashSet<>();
 
     EventListener(SignWarp plugin) {
         this.plugin = plugin;
@@ -201,7 +204,6 @@ public class EventListener implements Listener {
         String useItem = config.getString("use-item", "none");
         int useCost = config.getInt("use-cost", 0);
 
-        // "none" should be equal to null
         if (useItem != null && useItem.equalsIgnoreCase("none")) {
             useItem = null;
         }
@@ -255,6 +257,9 @@ public class EventListener implements Listener {
             previousTask.cancel();
         }
 
+        // Add the player to the invincible list
+        invinciblePlayers.add(playerUUID);
+
         // Schedule the new teleport task
         BukkitTask teleportTask = Bukkit.getScheduler().runTaskLater(plugin, () -> {
             Location targetLocation = warp.getLocation();
@@ -277,6 +282,8 @@ public class EventListener implements Listener {
 
             // Remove the task from the map after completion
             teleportTasks.remove(playerUUID);
+            // Remove the player from the invincible list
+            invinciblePlayers.remove(playerUUID);
         }, cooldown * 20L); // 20 ticks = 1 second
 
         // Store the task in the map
@@ -288,9 +295,7 @@ public class EventListener implements Listener {
         Player player = event.getPlayer();
         UUID playerUUID = player.getUniqueId();
 
-        // Check if there is a pending teleport task for the player
         if (teleportTasks.containsKey(playerUUID)) {
-            // If the player has moved, cancel the teleportation
             Location from = event.getFrom();
             Location to = event.getTo();
 
@@ -299,9 +304,20 @@ public class EventListener implements Listener {
                 if (teleportTask != null) {
                     teleportTask.cancel();
                     teleportTasks.remove(playerUUID);
+                    invinciblePlayers.remove(playerUUID); // Remove invincibility
                     String cancelMessage = config.getString("messages.teleport-cancelled", "&cTeleportation cancelled.");
                     player.sendMessage(ChatColor.translateAlternateColorCodes('&', cancelMessage));
                 }
+            }
+        }
+    }
+
+    @EventHandler
+    public void onEntityDamage(EntityDamageEvent event) {
+        if (event.getEntity() instanceof Player) {
+            Player player = (Player) event.getEntity();
+            if (invinciblePlayers.contains(player.getUniqueId())) {
+                event.setCancelled(true);
             }
         }
     }
