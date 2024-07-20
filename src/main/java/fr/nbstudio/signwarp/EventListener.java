@@ -1,5 +1,6 @@
 package fr.nbstudio.signwarp;
 
+import fr.nbstudio.signwarp.utils.SignUtils;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
