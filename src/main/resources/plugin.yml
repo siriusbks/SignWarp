@@ -6,8 +6,9 @@ api-version: '1.20'
 main: fr.nbstudio.signwarp.SignWarp
 commands:
   signwarp:
-    description: "Reload the SignWarp configuration"
-    usage: "/signwarp reload"
+    description: "Manage SignWarp commands"
+    usage: "/signwarp <subcommand>"
+    aliases: ["sw"]
 permissions:
   signwarp.*:
     children:
@@ -21,4 +22,7 @@ permissions:
     default: true
   signwarp.reload:
     description: "Allows you to reload the SignWarp configuration"
+    default: op
+  signwarp.admin:
+    description: "Allows access to the warp management GUI"
     default: op
