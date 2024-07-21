@@ -1,6 +1,7 @@
 package fr.nbstudio.signwarp;
 
 import fr.nbstudio.signwarp.bstats.Metrics;
+import fr.nbstudio.signwarp.gui.WarpGuiListener;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -14,7 +15,7 @@ public final class SignWarp extends JavaPlugin {
         // Check for updates
         new UpdateChecker(this, RESOURCE_ID).getVersion(version -> {
             if (this.getDescription().getVersion().equals(version)) {
-                getLogger().info("No new version available.");
+                getLogger().info("No new version available");
             } else {
                 getLogger().info("A new version of the plugin is available: " + version + " (current: " + this.getDescription().getVersion() + "). Download it here: " + PLUGIN_URL);
             }
@@ -31,10 +32,11 @@ public final class SignWarp extends JavaPlugin {
         Warp.createTable();
 
         // Register commands and tab completer
-        SWReloadCommand reloadCommand = new SWReloadCommand(this);
         PluginCommand command = getCommand("signwarp");
         if (command != null) {
-            command.setExecutor(reloadCommand);
+            SWCommand swCommand = new SWCommand(this);
+            command.setExecutor(swCommand);
+            command.setTabCompleter(swCommand);
         } else {
             getLogger().warning("Command 'signwarp' not found!");
         }
@@ -42,7 +44,11 @@ public final class SignWarp extends JavaPlugin {
         // Register event listener
         PluginManager pluginManager = getServer().getPluginManager();
         pluginManager.registerEvents(new EventListener(this), this);
-
+        pluginManager.registerEvents(new WarpGuiListener(this), this);
     }
 
+    @Override
+    public void onDisable() {
+        // Plugin shutdown logic
+    }
 }
