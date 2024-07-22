@@ -33,12 +33,11 @@ public class SWCommand implements CommandExecutor, TabCompleter {
                     WarpGui.openWarpGui(player, 0);
                 } else {
                     sender.sendMessage(ChatColor.translateAlternateColorCodes('&', plugin.getConfig().getString("messages.not_permission", "You don't have permission to use this command.")));
-                    return true;
                 }
             } else {
                 sender.sendMessage("This command can only be executed by a player.");
-                return true;
             }
+            return true;
         }
 
         if (args[0].equalsIgnoreCase("reload")) {
@@ -46,11 +45,10 @@ public class SWCommand implements CommandExecutor, TabCompleter {
                 plugin.reloadConfig();
                 EventListener.updateConfig(plugin);
                 sender.sendMessage(ChatColor.GREEN + "Configuration reloaded.");
-                return true;
             } else {
                 sender.sendMessage(ChatColor.translateAlternateColorCodes('&', plugin.getConfig().getString("messages.not_permission", "You don't have permission to use this command.")));
-                return true;
             }
+            return true;
         }
 
         sender.sendMessage("Unknown subcommand. Usage: /signwarp <gui|reload>");
