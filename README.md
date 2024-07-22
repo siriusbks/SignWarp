@@ -11,10 +11,12 @@ By default, teleportation costs one ender pearl, which must be in the player's h
 - `signwarp.create` - Allow creation and destruction of warp signs (default: op)
 - `signwarp.use` - Allow usage of warp signs (default: everyone)
 - `signwarp.reload` - Allow access to reload (default: op)
+- `signwarp.admin` - Allows access to the warp management GUI (default: op)
 - `signwarp.*` - Allow access to all features (default: op)
 
 Commands:
 - `/signwarp reload` - Reloads the configuration.
+- `/signwarp gui` - Open the warp management GUI.
 ## How to Use
 
 First, place a sign where you want to teleport with the following content:
@@ -37,6 +39,11 @@ Once you have created both signs, you can right-click with the `use-item` in you
 Each teleportation will cost the number of items configured in `use-cost` (default: 1).
 
 You can remove the `use-item` option in the config.yml or set it to "none" to allow any item to be used (i.e., each warp is free per use).
+
+## Admin GUI
+
+![Warps Admin](https://i.imgur.com/jnY1pYG.gif)
+
 ## Message Customization
 
 In the `config.yml` configuration file, you have the option to customize the messages used by the plugin. These messages are defined under the key messages and can be modified according to your preferences.
