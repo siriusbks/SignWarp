@@ -2,6 +2,7 @@ package fr.nbstudio.signwarp;
 
 import fr.nbstudio.signwarp.bstats.Metrics;
 import fr.nbstudio.signwarp.gui.WarpGuiListener;
+import org.bukkit.ChatColor;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -17,7 +18,7 @@ public final class SignWarp extends JavaPlugin {
             if (this.getDescription().getVersion().equals(version)) {
                 getLogger().info("No new version available");
             } else {
-                getLogger().info("A new version of the plugin is available: " + version + " (current: " + this.getDescription().getVersion() + "). Download it here: " + PLUGIN_URL);
+                getLogger().warning("A new version of the plugin is available: " + version + " (current: " + this.getDescription().getVersion() + "). Download it here: " + PLUGIN_URL);
             }
         });
 
