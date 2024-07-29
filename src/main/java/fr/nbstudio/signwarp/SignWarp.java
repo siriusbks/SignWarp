@@ -28,7 +28,7 @@ public final class SignWarp extends JavaPlugin {
         int pluginId = 21626;
         new Metrics(this, pluginId);
 
-        // Initialize database
+        // Initialize database and migrate table if needed
         Warp.createTable();
 
         // Register commands and tab completer
