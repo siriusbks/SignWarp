@@ -100,7 +100,8 @@ public class EventListener implements Listener {
                 return;
             }
 
-            Warp warp = new Warp(signData.warpName, player.getLocation());
+            String currentDateTime = java.time.LocalDateTime.now().toString();
+            Warp warp = new Warp(signData.warpName, player.getLocation(), currentDateTime);
             warp.save();
 
             event.setLine(0, ChatColor.BLUE + SignData.HEADER_TARGET);
