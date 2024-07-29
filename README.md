@@ -1,7 +1,7 @@
 # SignWarp
 
 A Bukkit plugin for teleportation using signs.
-**(Minecraft Version 1.20.4)**
+**(Minecraft Version 1.20 - 1.21)**
 
 SignWarp allows players to place signs to teleport between them with a simple right-click.
 
@@ -42,7 +42,7 @@ You can remove the `use-item` option in the config.yml or set it to "none" to al
 
 ## Admin GUI
 
-![Warps Admin](https://i.imgur.com/jnY1pYG.gif)
+![Warps Admin](https://i.imgur.com/60JLVPC.gif)
 
 ## Message Customization
 
