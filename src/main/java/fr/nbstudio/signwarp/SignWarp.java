@@ -2,7 +2,6 @@ package fr.nbstudio.signwarp;
 
 import fr.nbstudio.signwarp.bstats.Metrics;
 import fr.nbstudio.signwarp.gui.WarpGuiListener;
-import org.bukkit.ChatColor;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
