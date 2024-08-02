@@ -22,6 +22,17 @@ public final class SignWarp extends JavaPlugin {
             }
         });
 
+        // Setup Vault economy if available
+        if (getServer().getPluginManager().getPlugin("Vault") != null) {
+            if (!VaultEconomy.setupEconomy()) {
+                getLogger().warning("Vault is installed but economy setup failed.");
+            } else {
+                getLogger().info("Vault economy setup successfully.");
+            }
+        } else {
+            getLogger().warning("Vault not found. Economy features are disabled.");
+        }
+
         // Save default config
         saveDefaultConfig();
 
