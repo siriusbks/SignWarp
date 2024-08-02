@@ -40,6 +40,8 @@ Each teleportation will cost the number of items configured in `use-cost` (defau
 
 You can remove the `use-item` option in the config.yml or set it to "none" to allow any item to be used (i.e., each warp is free per use).
 
+Alternatively, you can enable `teleport-cost` in the `config.yml` to charge players a set amount of in-game currency for each teleportation. Ensure [Vault](https://www.spigotmc.org/resources/vault.34315/) is installed on your server to use this feature.
+
 ## Admin GUI
 
 ![Warps Admin](https://i.imgur.com/60JLVPC.gif)
@@ -66,12 +68,14 @@ messages:
   teleport: "&eTeleporting to {warp-name} in {time} seconds..."
   teleport-success: "&aSuccessfully teleported to {warp-name}."
   teleport-cancelled: "&cTeleport cancelled."
+  notify-cost: "&aYou have been charged {cost} currency for the teleportation."
   not_permission: "&cYou do not have permission!"
   ```
 
 - `{warp-name}` : This placeholder is replaced by the name of the warp specified on the sign.
 - `{use-item}` : Used to represent the name of the item required to use the warp. For example, if the required item is an ender pearl, this placeholder will be replaced by "ENDER_PEARL".
 - `{use-cost}` : This placeholder is replaced by the number of items needed to use the warp. For example, if the cost to use the warp is 1 ender pearl, this placeholder will be replaced by "1".
+- `{cost}` : This placeholder is replaced by the amount of currency charged for teleportation.
 - `{time}` : This placeholder is replaced by the time in seconds before the teleportation is completed.
 
 You have the option to stylize your texts with Minecraft color codes. These codes start with the & character, followed by a letter or number representing a specific color. [More informations](https://www.digminecraft.com/lists/color_list_pc.php)
