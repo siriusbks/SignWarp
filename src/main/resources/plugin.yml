@@ -4,6 +4,8 @@ description: Warp tp plugin on signs
 author: SiriusB_
 api-version: '1.20'
 main: fr.nbstudio.signwarp.SignWarp
+softdepend:
+  - Vault
 commands:
   signwarp:
     description: "Manage SignWarp commands"
