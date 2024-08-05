@@ -2,11 +2,16 @@ package fr.nbstudio.signwarp;
 
 import fr.nbstudio.signwarp.bstats.Metrics;
 import fr.nbstudio.signwarp.gui.WarpGuiListener;
+import org.bukkit.ChatColor;
 import org.bukkit.command.PluginCommand;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public final class SignWarp extends JavaPlugin {
+public final class SignWarp extends JavaPlugin implements Listener {
 
     private static final int RESOURCE_ID = 116195;
     private static final String PLUGIN_URL = "https://www.spigotmc.org/resources/signwarp-teleport-using-the-signs." + RESOURCE_ID + "/";
@@ -56,6 +61,25 @@ public final class SignWarp extends JavaPlugin {
         PluginManager pluginManager = getServer().getPluginManager();
         pluginManager.registerEvents(new EventListener(this), this);
         pluginManager.registerEvents(new WarpGuiListener(this), this);
+        pluginManager.registerEvents(this, this);
+    }
+
+    @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        Player player = event.getPlayer();
+
+        if (player.isOp()) {
+        new UpdateChecker(this, RESOURCE_ID).getVersion(version -> {
+            if (!this.getDescription().getVersion().equals(version)) {
+                player.sendMessage(
+                        ChatColor.DARK_RED + "⚠ A new version of SignWarp is available: " +
+                                ChatColor.RED + version +
+                                " (current: " + this.getDescription().getVersion() + "). " +
+                                ChatColor.DARK_RED + "Download it here: " + ChatColor.RED + PLUGIN_URL
+                );
+                }
+            });
+        }
     }
 
     @Override
