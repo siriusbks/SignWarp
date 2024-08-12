@@ -64,23 +64,23 @@ public final class SignWarp extends JavaPlugin implements Listener {
         pluginManager.registerEvents(this, this);
     }
 
-    @EventHandler
-    public void onPlayerJoin(PlayerJoinEvent event) {
-        Player player = event.getPlayer();
-
-        if (player.isOp()) {
-        new UpdateChecker(this, RESOURCE_ID).getVersion(version -> {
-            if (!this.getDescription().getVersion().equals(version)) {
-                player.sendMessage(
-                        ChatColor.DARK_RED + "⚠ A new version of SignWarp is available: " +
-                                ChatColor.RED + version +
-                                " (current: " + this.getDescription().getVersion() + "). " +
-                                ChatColor.DARK_RED + "Download it here: " + ChatColor.RED + PLUGIN_URL
-                );
-                }
-            });
-        }
-    }
+//    @EventHandler
+//    public void onPlayerJoin(PlayerJoinEvent event) {
+//        Player player = event.getPlayer();
+//
+//        if (player.isOp()) {
+//        new UpdateChecker(this, RESOURCE_ID).getVersion(version -> {
+//            if (!this.getDescription().getVersion().equals(version)) {
+//                player.sendMessage(
+//                        ChatColor.DARK_RED + "⚠ A new version of SignWarp is available: " +
+//                                ChatColor.RED + version +
+//                                " (current: " + this.getDescription().getVersion() + "). " +
+//                                ChatColor.DARK_RED + "Download it here: " + ChatColor.RED + PLUGIN_URL
+//                );
+//                }
+//            });
+//        }
+//    } for the next release
 
     @Override
     public void onDisable() {

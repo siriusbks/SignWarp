@@ -6,7 +6,7 @@
 
     <groupId>fr.nbstudio</groupId>
     <artifactId>SignWarp</artifactId>
-    <version>1.1.0</version>
+    <version>1.1.1</version> <!-- Real version : 1.1.1 - Version testing : 1.0.8 -->
     <packaging>jar</packaging>
 
     <name>SignWarp</name>
