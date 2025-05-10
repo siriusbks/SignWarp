@@ -52,10 +52,8 @@ public class WarpGui {
             ItemMeta warpMeta = warpItem.getItemMeta();
             warpMeta.setDisplayName(ChatColor.DARK_GREEN + warp.getName());
             List<String> lore = new ArrayList<>();
-            lore.add(ChatColor.GOLD + "World: " + warp.getLocation().getWorld().getName());
-            lore.add(ChatColor.YELLOW + "X: " + warp.getLocation().getX());
-            lore.add(ChatColor.YELLOW + "Y: " + warp.getLocation().getY());
-            lore.add(ChatColor.YELLOW + "Z: " + warp.getLocation().getZ());
+            lore.add(ChatColor.YELLOW + "World: " + warp.getLocation().getWorld().getName());
+            lore.add(ChatColor.GOLD + "X: " + Math.round(warp.getLocation().getX()) + " Y: " + Math.round(warp.getLocation().getY()) + " Z: " + Math.round(warp.getLocation().getZ()));
             lore.add(ChatColor.DARK_GREEN + "Created: " + warp.getFormattedCreatedAt());
             lore.add(ChatColor.RED + "Click to teleport");
             warpMeta.setLore(lore);

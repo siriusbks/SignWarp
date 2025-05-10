@@ -30,3 +30,6 @@ permissions:
   signwarp.admin:
     description: "Allows access to the warp management GUI"
     default: op
+  signwarp.limit.unlimited:
+    description: "Allows unlimited warp creation"
+    default: op
