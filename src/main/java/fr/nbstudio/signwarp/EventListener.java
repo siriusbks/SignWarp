@@ -17,14 +17,12 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.server.PluginEnableEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.permissions.PermissionAttachmentInfo;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class EventListener implements Listener {
     private final SignWarp plugin;
@@ -45,8 +43,7 @@ public class EventListener implements Listener {
     }
 
     @EventHandler
-    public void onPluginEnable(PluginEnableEvent event) {
-    }
+    public void onPluginEnable(PluginEnableEvent event) {}
 
     @EventHandler
     public void onSignChange(SignChangeEvent event) throws IOException {
@@ -61,7 +58,8 @@ public class EventListener implements Listener {
         if (!player.hasPermission("signwarp.create")) {
             String noPermissionMessage = config.getString("messages.create_permission");
             if (noPermissionMessage != null) {
-                player.sendMessage(ChatColor.translateAlternateColorCodes('&', noPermissionMessage));
+                player.sendMessage(
+                        ChatColor.translateAlternateColorCodes('&', noPermissionMessage));
             }
             event.setCancelled(true);
             return;
@@ -76,13 +74,30 @@ public class EventListener implements Listener {
             return;
         }
 
+        if (signData.isWarpTarget()) {
+            int warpLimit = getWarpLimit(player);
+            if (warpLimit != -1) {
+                long currentWarps = Warp.getAll().size();
+
+                if (currentWarps >= warpLimit) {
+                    String limitMessage = config.getString("messages.limit_reached",
+                            "&cYou have reached your warp creation limit ({limit}).");
+                    player.sendMessage(ChatColor.translateAlternateColorCodes('&',
+                            limitMessage.replace("{limit}", String.valueOf(warpLimit))));
+                    event.setCancelled(true);
+                    return;
+                }
+            }
+        }
+
         Warp existingWarp = Warp.getByName(signData.warpName);
 
         if (signData.isWarp()) {
             if (existingWarp == null) {
                 String warpNotFoundMessage = config.getString("messages.warp_not_found");
                 if (warpNotFoundMessage != null) {
-                    player.sendMessage(ChatColor.translateAlternateColorCodes('&', warpNotFoundMessage));
+                    player.sendMessage(
+                            ChatColor.translateAlternateColorCodes('&', warpNotFoundMessage));
                 }
                 event.setCancelled(true);
                 return;
@@ -98,7 +113,8 @@ public class EventListener implements Listener {
             if (existingWarp != null) {
                 String warpNameTakenMessage = config.getString("messages.warp_name_taken");
                 if (warpNameTakenMessage != null) {
-                    player.sendMessage(ChatColor.translateAlternateColorCodes('&', warpNameTakenMessage));
+                    player.sendMessage(
+                            ChatColor.translateAlternateColorCodes('&', warpNameTakenMessage));
                 }
                 event.setCancelled(true);
                 return;
@@ -112,9 +128,26 @@ public class EventListener implements Listener {
 
             String targetSignCreatedMessage = config.getString("messages.target_sign_created");
             if (targetSignCreatedMessage != null) {
-                player.sendMessage(ChatColor.translateAlternateColorCodes('&', targetSignCreatedMessage));
+                player.sendMessage(
+                        ChatColor.translateAlternateColorCodes('&', targetSignCreatedMessage));
             }
         }
+    }
+
+    private int getWarpLimit(Player player) {
+        if (player.hasPermission("signwarp.limit.unlimited")) return -1;
+
+        int maxLimit = -1;
+        for (PermissionAttachmentInfo permInfo : player.getEffectivePermissions()) {
+            String perm = permInfo.getPermission();
+            if (perm.startsWith("signwarp.limit.")) {
+                try {
+                    int limit = Integer.parseInt(perm.substring("signwarp.limit.".length()));
+                    if (limit > maxLimit) maxLimit = limit;
+                } catch (NumberFormatException ignored) {}
+            }
+        }
+        return maxLimit;
     }
 
     @EventHandler
@@ -150,7 +183,8 @@ public class EventListener implements Listener {
         if (!player.hasPermission("signwarp.create")) {
             String noPermissionMessage = config.getString("messages.destroy_permission");
             if (noPermissionMessage != null) {
-                player.sendMessage(ChatColor.translateAlternateColorCodes('&', noPermissionMessage));
+                player.sendMessage(
+                        ChatColor.translateAlternateColorCodes('&', noPermissionMessage));
             }
             event.setCancelled(true);
             return;
@@ -164,7 +198,8 @@ public class EventListener implements Listener {
 
         warp.remove();
 
-        player.sendMessage(ChatColor.translateAlternateColorCodes('&', config.getString("messages.warp_destroyed")));
+        player.sendMessage(ChatColor.translateAlternateColorCodes('&',
+                config.getString("messages.warp_destroyed")));
     }
 
     @EventHandler
@@ -201,12 +236,13 @@ public class EventListener implements Listener {
         if (!player.hasPermission("signwarp.use")) {
             String noPermissionMessage = config.getString("messages.use_permission");
             if (noPermissionMessage != null) {
-                player.sendMessage(ChatColor.translateAlternateColorCodes('&', noPermissionMessage));
+                player.sendMessage(
+                        ChatColor.translateAlternateColorCodes('&', noPermissionMessage));
             }
             return;
         }
 
-        double teleportCost = config.getDouble("teleport-cost", 100.0); // Default cost
+        double teleportCost = config.getDouble("teleport-cost", 0.0);
         String useItem = config.getString("use-item", "none");
         int useCost = config.getInt("use-cost", 0);
 
@@ -218,7 +254,8 @@ public class EventListener implements Listener {
             // Case where no item is required and a teleportation cost is applied
             Economy economy = VaultEconomy.getEconomy();
             if (economy == null) {
-                player.sendMessage(ChatColor.RED + "Vault is required for teleportation cost, but it is not installed or enabled.");
+                player.sendMessage(ChatColor.RED
+                        + "Vault is required for teleportation cost, but it is not installed or enabled.");
                 return;
             }
 
@@ -238,7 +275,9 @@ public class EventListener implements Listener {
                 if (useCost > event.getItem().getAmount()) {
                     String notEnoughItemMessage = config.getString("messages.not_enough_item");
                     if (notEnoughItemMessage != null) {
-                        player.sendMessage(ChatColor.translateAlternateColorCodes('&', notEnoughItemMessage.replace("{use-cost}", String.valueOf(useCost)).replace("{use-item}", useItem)));
+                        player.sendMessage(ChatColor.translateAlternateColorCodes('&',
+                                notEnoughItemMessage.replace("{use-cost}", String.valueOf(useCost))
+                                        .replace("{use-item}", useItem)));
                     }
                     return;
                 }
@@ -248,7 +287,9 @@ public class EventListener implements Listener {
             } else {
                 String invalidItemMessage = config.getString("messages.invalid_item");
                 if (invalidItemMessage != null) {
-                    player.sendMessage(ChatColor.translateAlternateColorCodes('&', invalidItemMessage.replace("{use-item}", useItem != null ? useItem : "an item")));
+                    player.sendMessage(
+                            ChatColor.translateAlternateColorCodes('&', invalidItemMessage
+                                    .replace("{use-item}", useItem != null ? useItem : "an item")));
                 }
             }
         } else if (teleportCost == 0.0 && useItem == null) {
@@ -267,7 +308,8 @@ public class EventListener implements Listener {
         if (warp == null) {
             String warpNotFoundMessage = config.getString("messages.warp_not_found");
             if (warpNotFoundMessage != null) {
-                player.sendMessage(ChatColor.translateAlternateColorCodes('&', warpNotFoundMessage));
+                player.sendMessage(
+                        ChatColor.translateAlternateColorCodes('&', warpNotFoundMessage));
             }
             return;
         }
@@ -276,7 +318,9 @@ public class EventListener implements Listener {
 
         String teleportMessage = config.getString("messages.teleport");
         if (teleportMessage != null) {
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&', teleportMessage.replace("{warp-name}", warp.getName()).replace("{time}", String.valueOf(cooldown))));
+            player.sendMessage(ChatColor.translateAlternateColorCodes('&',
+                    teleportMessage.replace("{warp-name}", warp.getName()).replace("{time}",
+                            String.valueOf(cooldown))));
         }
 
         UUID playerUUID = player.getUniqueId();
@@ -307,7 +351,8 @@ public class EventListener implements Listener {
 
             String successMessage = config.getString("messages.teleport-success");
             if (successMessage != null) {
-                player.sendMessage(ChatColor.translateAlternateColorCodes('&', successMessage.replace("{warp-name}", warp.getName())));
+                player.sendMessage(ChatColor.translateAlternateColorCodes('&',
+                        successMessage.replace("{warp-name}", warp.getName())));
             }
 
             // Deduct cost after successful teleportation
@@ -320,7 +365,8 @@ public class EventListener implements Listener {
                     // Notify the player of the cost
                     String notifyCostMessage = config.getString("messages.notify-cost");
                     if (notifyCostMessage != null) {
-                        player.sendMessage(ChatColor.translateAlternateColorCodes('&', notifyCostMessage.replace("{cost}", String.valueOf(teleportCost))));
+                        player.sendMessage(ChatColor.translateAlternateColorCodes('&',
+                                notifyCostMessage.replace("{cost}", String.valueOf(teleportCost))));
                     }
                 }
             } else {
@@ -359,7 +405,8 @@ public class EventListener implements Listener {
                     invinciblePlayers.remove(playerUUID); // Remove invincibility
                     pendingTeleportCosts.remove(playerUUID); // Remove pending teleport cost
                     pendingItemCosts.remove(playerUUID); // Remove pending item cost
-                    String cancelMessage = config.getString("messages.teleport-cancelled", "&cTeleportation cancelled.");
+                    String cancelMessage = config.getString("messages.teleport-cancelled",
+                            "&cTeleportation cancelled.");
                     player.sendMessage(ChatColor.translateAlternateColorCodes('&', cancelMessage));
                 }
             }

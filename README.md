@@ -1,7 +1,8 @@
 # SignWarp
+![Version](https://img.shields.io/badge/plugin%20version-1.1.2-blue) ![Minecraft](https://img.shields.io/badge/minecraft-1.20--1.21.4-brightgreen) ![Downloads](https://img.shields.io/badge/downloads-1k%2B-orange) [![Discord](https://img.shields.io/discord/1188587577998057582?label=Discord&logo=discord&color=5865F2)](https://discord.com/invite/sRuEqP6Bxs)
 
 A Bukkit plugin for teleportation using signs.
-**(Minecraft Version 1.20 - 1.21)**
+**(Minecraft Version 1.20 - 1.21.4)**
 
 SignWarp allows players to place signs to teleport between them with a simple right-click.
 
@@ -13,6 +14,7 @@ By default, teleportation costs one ender pearl, which must be in the player's h
 - `signwarp.reload` - Allow access to reload (default: op)
 - `signwarp.admin` - Allows access to the warp management GUI (default: op)
 - `signwarp.*` - Allow access to all features (default: op)
+- `signwarp.limit.unlimited` - Allows unlimited warp creation
 
 Commands:
 - `/signwarp reload` - Reloads the configuration.
@@ -42,6 +44,14 @@ You can remove the `use-item` option in the config.yml or set it to "none" to al
 
 Alternatively, you can enable `teleport-cost` in the `config.yml` to charge players a set amount of in-game currency for each teleportation. Ensure [Vault](https://www.spigotmc.org/resources/vault.34315/) is installed on your server to use this feature.
 
+## Warp Limit System
+Control the maximum number of warps players can create using permissions.
+
+Example with LuckPerms:
+`/lp group default permission set signwarp.limit.3`
+
+This allows players in the default group to create up to 3 warps.
+Without a limit permission, players can create an unlimited number of warps by default.
 ## Admin GUI
 
 ![Warps Admin](https://i.imgur.com/60JLVPC.gif)
@@ -70,6 +80,7 @@ messages:
   teleport-cancelled: "&cTeleport cancelled."
   notify-cost: "&aYou have been charged {cost} currency for the teleportation."
   not_permission: "&cYou do not have permission!"
+  limit_reached: "&cYou have reached your warp creation limit ({limit})."
   ```
 
 - `{warp-name}` : This placeholder is replaced by the name of the warp specified on the sign.
