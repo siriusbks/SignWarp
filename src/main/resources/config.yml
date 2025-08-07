@@ -35,3 +35,5 @@ messages:
   notify-cost: "&aYou have been charged {cost} currency for the teleportation."
   not_permission: "&cYou do not have permission!"
   limit_reached: "&cYou have reached your warp creation limit ({limit})."
+  warp_sign_removed: "&aWarp sign removed successfully!"
+  no_bidirectional_link: "&cNo return point found for this warp!"
