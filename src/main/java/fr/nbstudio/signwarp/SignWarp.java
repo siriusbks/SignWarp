@@ -42,6 +42,7 @@ public final class SignWarp extends JavaPlugin implements Listener {
 
         // Initialize database and migrate table if needed
         Warp.createTable();
+        WarpSignLink.createTable();
 
         // Register commands and tab completer
         PluginCommand command = getCommand("signwarp");
