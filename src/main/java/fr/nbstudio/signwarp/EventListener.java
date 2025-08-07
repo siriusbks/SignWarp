@@ -281,7 +281,7 @@ public class EventListener implements Listener {
 
             // Temporarily store the teleport cost to be deducted after teleportation
             pendingTeleportCosts.put(player.getUniqueId(), teleportCost);
-            
+
             // For bi-directional teleportation
             if (signData.isWarpTarget()) {
                 // Teleport from target back to warp sign
@@ -306,15 +306,15 @@ public class EventListener implements Listener {
                 }
 
                 pendingItemCosts.put(player.getUniqueId(), useCost);
-            
-            // For bi-directional teleportation
-            if (signData.isWarpTarget()) {
-                // Teleport from target back to warp sign
-                teleportPlayerBidirectional(player, signData.warpName, "TARGET", false, 0);
-            } else {
-                // Original teleport from warp to target
-                teleportPlayer(player, signData.warpName, false, 0);
-            }
+
+                // For bi-directional teleportation
+                if (signData.isWarpTarget()) {
+                    // Teleport from target back to warp sign
+                    teleportPlayerBidirectional(player, signData.warpName, "TARGET", false, 0);
+                } else {
+                    // Original teleport from warp to target
+                    teleportPlayer(player, signData.warpName, false, 0);
+                }
             } else {
                 String invalidItemMessage = config.getString("messages.invalid_item");
                 if (invalidItemMessage != null) {
@@ -324,16 +324,16 @@ public class EventListener implements Listener {
                 }
             }
         } else if (teleportCost == 0.0 && useItem == null) {
-        // Case where neither an item nor a teleportation cost is required
-        
-        // For bi-directional teleportation
-        if (signData.isWarpTarget()) {
-            // Teleport from target back to warp sign
-            teleportPlayerBidirectional(player, signData.warpName, "TARGET", false, 0);
-        } else {
-            // Original teleport from warp to target
-            teleportPlayer(player, signData.warpName, false, 0);
-        }
+            // Case where neither an item nor a teleportation cost is required
+
+            // For bi-directional teleportation
+            if (signData.isWarpTarget()) {
+                // Teleport from target back to warp sign
+                teleportPlayerBidirectional(player, signData.warpName, "TARGET", false, 0);
+            } else {
+                // Original teleport from warp to target
+                teleportPlayer(player, signData.warpName, false, 0);
+            }
         } else {
             // Case where both item and money can be used for teleportation
             player.sendMessage(ChatColor.RED + "You must use an item or pay to teleport.");
@@ -435,7 +435,7 @@ public class EventListener implements Listener {
     private void teleportPlayerBidirectional(Player player, String warpName, String currentSignType, boolean useEconomy, double cost) {
         // Find the opposite end location
         Location targetLocation = WarpSignLink.getOtherEndLocation(warpName, currentSignType);
-        
+
         if (targetLocation == null) {
             String noLinkMessage = config.getString("messages.no_bidirectional_link", "&cNo return point found for this warp!");
             player.sendMessage(ChatColor.translateAlternateColorCodes('&', noLinkMessage));
