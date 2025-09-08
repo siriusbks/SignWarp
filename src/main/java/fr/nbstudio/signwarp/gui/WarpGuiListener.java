@@ -2,6 +2,7 @@ package fr.nbstudio.signwarp.gui;
 
 import fr.nbstudio.signwarp.Warp;
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -51,9 +52,21 @@ public class WarpGuiListener implements Listener {
                 String warpName = ChatColor.stripColor(clickedItem.getItemMeta().getDisplayName());
                 Warp warp = Warp.getByName(warpName);
                 if (warp != null) {
-                    player.teleport(warp.getLocation());
-                    player.sendMessage(ChatColor.GREEN + "Teleported to " + warp.getName());
-                    player.closeInventory();
+
+                    final Location target = warp.getLocation();
+                    if (target == null || target.getWorld() == null) {
+                        player.sendMessage(ChatColor.RED + "Warp location is invalid.");
+                        return;
+                    }
+
+                    player.teleportAsync(target).thenAccept(success -> {
+                        if (Boolean.TRUE.equals(success)) {
+                            player.sendMessage(ChatColor.GREEN + "Teleported to " + warp.getName());
+                            player.closeInventory();
+                        } else {
+                            player.sendMessage(ChatColor.RED + "Teleport failed.");
+                        }
+                    });
                 } else {
                     player.sendMessage(ChatColor.RED + "Warp not found: " + warpName);
                 }
