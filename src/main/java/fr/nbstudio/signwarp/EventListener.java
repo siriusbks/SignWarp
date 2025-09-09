@@ -5,7 +5,9 @@ import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.*;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.block.Sign;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.block.sign.Side;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
@@ -391,12 +393,27 @@ public class EventListener implements Listener {
     }
 
     private void teleportPlayerBidirectional(Player player, String warpName, String currentSignType, boolean useEconomy, double cost) {
-        Location targetLocation = WarpSignLink.getOtherEndLocation(warpName, currentSignType);
-        if (targetLocation == null) {
+        Location signBlockLoc = WarpSignLink.getOtherEndLocation(warpName, currentSignType);
+        if (signBlockLoc == null) {
             String noLinkMessage = config.getString("messages.no_bidirectional_link", "&cNo return point found for this warp!");
             player.sendMessage(ChatColor.translateAlternateColorCodes('&', noLinkMessage));
             return;
         }
+
+        Location targetLocation;
+        Block signBlock = signBlockLoc.getBlock();
+        BlockData data = signBlock.getBlockData();
+
+        if (data instanceof org.bukkit.block.data.type.WallSign) {
+            org.bukkit.block.data.type.WallSign ws = (org.bukkit.block.data.type.WallSign) data;
+            BlockFace front = ws.getFacing();
+            targetLocation = signBlock.getRelative(front).getLocation().add(0.5, 0, 0.5);
+        } else {
+            targetLocation = signBlockLoc.clone().add(0.5, 0, 0.5);
+        }
+
+        targetLocation.setYaw(player.getLocation().getYaw());
+        targetLocation.setPitch(player.getLocation().getPitch());
 
         int cooldown = config.getInt("teleport-cooldown", 5);
 
@@ -421,7 +438,6 @@ public class EventListener implements Listener {
                         player.sendMessage(ChatColor.RED + "Teleport failed.");
                         invinciblePlayers.remove(playerUUID);
                         return;
-
                     }
 
                     String soundName = config.getString("teleport-sound", "ENTITY_ENDERMAN_TELEPORT");
@@ -443,7 +459,6 @@ public class EventListener implements Listener {
                         player.sendMessage(ChatColor.translateAlternateColorCodes('&',
                                 successMessage.replace("{warp-name}", warpName)));
                     }
-
                     if (useEconomy) {
                         Double teleportCost = pendingTeleportCosts.remove(playerUUID);
                         if (teleportCost != null) {
@@ -465,11 +480,12 @@ public class EventListener implements Listener {
                         }
                     }
 
-                    invinciblePlayers.remove(playerUUID);
                     teleportTasks.remove(playerUUID);
-            }, null);
+                    player.getScheduler().runDelayed(plugin, x -> invinciblePlayers.remove(playerUUID), null, 10L);
+
+                }, null);
             });
-        }, null,cooldown * 20L);
+        }, null, cooldown * 20L);
 
         teleportTasks.put(playerUUID, task);
     }
