@@ -22,48 +22,90 @@ public class SWCommand implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0) {
-            sender.sendMessage("Usage: /signwarp <gui|reload>");
+            sender.sendMessage(ChatColor.RED + "Usage: /signwarp <gui|reload|confirmwarpdelete>");
             return true;
         }
 
-        if (args[0].equalsIgnoreCase("gui")) {
-            if (sender instanceof Player) {
-                Player player = (Player) sender;
-                if (player.hasPermission("signwarp.admin")) {
-                    WarpGui.openWarpGui(player, 0);
-                } else {
-                    sender.sendMessage(ChatColor.translateAlternateColorCodes('&', plugin.getConfig().getString("messages.not_permission", "You don't have permission to use this command.")));
+        switch (args[0].toLowerCase()) {
+            case "gui":
+                if (!(sender instanceof Player)) {
+                    sender.sendMessage(ChatColor.RED + "This command can only be executed by a player.");
+                    return true;
                 }
-            } else {
-                sender.sendMessage("This command can only be executed by a player.");
-            }
-            return true;
-        }
+                Player player = (Player) sender;
+                if (!player.hasPermission("signwarp.admin")) {
+                    player.sendMessage(ChatColor.RED + plugin.getConfig().getString("messages.not_permission",
+                            "You don't have permission to use this command."));
+                    return true;
+                }
+                WarpGui.openWarpGui(player, 0);
+                return true;
 
-        if (args[0].equalsIgnoreCase("reload")) {
-            if (sender.hasPermission("signwarp.reload")) {
+            case "reload":
+                if (!sender.hasPermission("signwarp.reload")) {
+                    sender.sendMessage(ChatColor.RED + plugin.getConfig().getString("messages.not_permission",
+                            "You don't have permission to use this command."));
+                    return true;
+                }
                 plugin.reloadConfig();
                 EventListener.updateConfig(plugin);
-                sender.sendMessage(ChatColor.GREEN + "Configuration reloaded.");
-            } else {
-                sender.sendMessage(ChatColor.translateAlternateColorCodes('&', plugin.getConfig().getString("messages.not_permission", "You don't have permission to use this command.")));
-            }
-            return true;
-        }
+                sender.sendMessage(ChatColor.GREEN + "Configuration successfully reloaded.");
+                return true;
 
-        sender.sendMessage("Unknown subcommand. Usage: /signwarp <gui|reload>");
-        return true;
+            case "confirmwarpdelete":
+                if (!(sender instanceof Player)) {
+                    sender.sendMessage(ChatColor.RED + "This command can only be executed by a player.");
+                    return true;
+                }
+                Player playerToDelete = (Player) sender;
+                org.bukkit.block.Block block = EventListener.getPendingDeletion(playerToDelete.getUniqueId());
+
+                if (block == null) {
+                    playerToDelete.sendMessage(ChatColor.RED + "You have no pending warp deletion.");
+                    return true;
+                }
+
+                org.bukkit.block.Sign sign = fr.nbstudio.signwarp.utils.SignUtils.getSignFromBlock(block);
+
+                if (sign == null) {
+                    playerToDelete.sendMessage(ChatColor.RED + "The sign is no longer valid.");
+                    EventListener.removePendingDeletion(playerToDelete.getUniqueId());
+                    return true;
+                }
+
+                SignData signData = new SignData(sign.getSide(org.bukkit.block.sign.Side.FRONT).getLines());
+                Warp warp = Warp.getByName(signData.warpName);
+
+                if (warp != null) {
+                    warp.remove();
+                    playerToDelete.sendMessage(ChatColor.GREEN + "Warp '" + warp.getName() + "' deleted successfully.");
+                } else {
+                    playerToDelete.sendMessage(ChatColor.RED + "Warp not found in database.");
+                }
+
+                block.setType(org.bukkit.Material.AIR);
+                EventListener.removePendingDeletion(playerToDelete.getUniqueId());
+                return true;
+
+            default:
+                sender.sendMessage(
+                        ChatColor.RED + "Unknown subcommand. Usage: /signwarp <gui|reload|confirmwarpdelete>");
+                return true;
+        }
     }
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         List<String> completions = new ArrayList<>();
         if (args.length == 1) {
-            if ("gui".startsWith(args[0].toLowerCase())) {
+            if (sender.hasPermission("signwarp.admin") && "gui".startsWith(args[0].toLowerCase())) {
                 completions.add("gui");
             }
-            if ("reload".startsWith(args[0].toLowerCase())) {
+            if (sender.hasPermission("signwarp.reload") && "reload".startsWith(args[0].toLowerCase())) {
                 completions.add("reload");
+            }
+            if (sender.hasPermission("signwarp.break") && "confirmwarpdelete".startsWith(args[0].toLowerCase())) {
+                completions.add("confirmwarpdelete");
             }
         }
         return completions;

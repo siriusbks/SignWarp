@@ -10,7 +10,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 public final class SignWarp extends JavaPlugin implements Listener {
 
     private static final int RESOURCE_ID = 116195;
-    private static final String PLUGIN_URL = "https://www.spigotmc.org/resources/signwarp-teleport-using-the-signs." + RESOURCE_ID + "/";
+    private static final String PLUGIN_URL = "https://www.spigotmc.org/resources/signwarp-teleport-using-the-signs."
+            + RESOURCE_ID + "/";
 
     public void onEnable() {
         // Check for updates
@@ -18,7 +19,8 @@ public final class SignWarp extends JavaPlugin implements Listener {
             if (this.getDescription().getVersion().equals(version)) {
                 getLogger().info("No new version available");
             } else {
-                getLogger().warning("A new version of the plugin is available: " + version + " (current: " + this.getDescription().getVersion() + "). Download it here: " + PLUGIN_URL);
+                getLogger().warning("A new version of the plugin is available: " + version + " (current: "
+                        + this.getDescription().getVersion() + "). Download it here: " + PLUGIN_URL);
             }
         });
 
@@ -59,24 +61,6 @@ public final class SignWarp extends JavaPlugin implements Listener {
         pluginManager.registerEvents(new WarpGuiListener(this), this);
         pluginManager.registerEvents(this, this);
     }
-
-//    @EventHandler
-//    public void onPlayerJoin(PlayerJoinEvent event) {
-//        Player player = event.getPlayer();
-//
-//        if (player.isOp()) {
-//        new UpdateChecker(this, RESOURCE_ID).getVersion(version -> {
-//            if (!this.getDescription().getVersion().equals(version)) {
-//                player.sendMessage(
-//                        ChatColor.DARK_RED + "⚠ A new version of SignWarp is available: " +
-//                                ChatColor.RED + version +
-//                                " (current: " + this.getDescription().getVersion() + "). " +
-//                                ChatColor.DARK_RED + "Download it here: " + ChatColor.RED + PLUGIN_URL
-//                );
-//                }
-//            });
-//        }
-//    } for the soon release
 
     @Override
     public void onDisable() {
