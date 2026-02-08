@@ -19,6 +19,7 @@ import org.bukkit.event.server.PluginEnableEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.permissions.PermissionAttachmentInfo;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.io.IOException;
@@ -31,6 +32,7 @@ public class EventListener implements Listener {
     private final HashSet<UUID> invinciblePlayers = new HashSet<>();
     private final HashMap<UUID, Double> pendingTeleportCosts = new HashMap<>();
     private final HashMap<UUID, Integer> pendingItemCosts = new HashMap<>();
+    private static final HashMap<UUID, Block> pendingDeletions = new HashMap<>();
 
     EventListener(SignWarp plugin) {
         this.plugin = plugin;
@@ -40,6 +42,14 @@ public class EventListener implements Listener {
     // method static to update the config
     public static void updateConfig(JavaPlugin plugin) {
         config = plugin.getConfig();
+    }
+
+    public static Block getPendingDeletion(UUID playerUUID) {
+        return pendingDeletions.get(playerUUID);
+    }
+
+    public static void removePendingDeletion(UUID playerUUID) {
+        pendingDeletions.remove(playerUUID);
     }
 
     @EventHandler
@@ -202,22 +212,34 @@ public class EventListener implements Listener {
             return;
         }
 
-        // Remove the sign link for bi-directional support
-        WarpSignLink.removeByLocation(block.getLocation());
-
-        // Only remove the warp itself if it's a target sign
-        if (signData.isWarpTarget()) {
-            Warp warp = Warp.getByName(signData.warpName);
-            if (warp != null) {
-                warp.remove();
-                player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                        config.getString("messages.warp_destroyed")));
-            }
-        } else {
-            // For warp signs, just notify that the sign was removed
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                    config.getString("messages.warp_sign_removed", "&aWarp sign removed successfully!")));
+        if (!player.hasPermission("signwarp.break")) {
+            player.sendMessage(ChatColor.RED + "You do not have permission to break Warp signs.");
+            event.setCancelled(true);
+            return;
         }
+
+        event.setCancelled(true);
+
+        if (pendingDeletions.containsKey(player.getUniqueId())) {
+            player.sendMessage(ChatColor.YELLOW
+                    + "You already have a pending Warp sign deletion. Type /signwarp confirmwarpdelete to confirm.");
+            return;
+        }
+
+        pendingDeletions.put(player.getUniqueId(), block);
+        player.sendMessage(ChatColor.YELLOW
+                + "Are you sure you want to delete this Warp sign? Type /signwarp confirmwarpdelete within 10 seconds to confirm.");
+
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (pendingDeletions.containsKey(player.getUniqueId())
+                        && pendingDeletions.get(player.getUniqueId()).equals(block)) {
+                    pendingDeletions.remove(player.getUniqueId());
+                    player.sendMessage(ChatColor.RED + "Warp deletion request expired.");
+                }
+            }
+        }.runTaskLater(plugin, 200);
     }
 
     @EventHandler
@@ -554,8 +576,20 @@ public class EventListener implements Listener {
     public void onEntityDamage(EntityDamageEvent event) {
         if (event.getEntity() instanceof Player) {
             Player player = (Player) event.getEntity();
-            if (invinciblePlayers.contains(player.getUniqueId())) {
-                event.setCancelled(true);
+            UUID playerUUID = player.getUniqueId();
+            if (teleportTasks.containsKey(playerUUID)) {
+                // Cancel teleport instead of cancelling damage
+                BukkitTask task = teleportTasks.remove(playerUUID);
+                if (task != null) {
+                    task.cancel();
+                }
+                invinciblePlayers.remove(playerUUID);
+                pendingTeleportCosts.remove(playerUUID);
+                pendingItemCosts.remove(playerUUID);
+
+                String cancelMessage = config.getString("messages.teleport-cancelled-damage",
+                        "&cTeleportation cancelled due to damage.");
+                player.sendMessage(ChatColor.translateAlternateColorCodes('&', cancelMessage));
             }
         }
     }

@@ -84,6 +84,7 @@ public class SWCommand implements CommandExecutor, TabCompleter {
                 }
 
                 block.setType(org.bukkit.Material.AIR);
+                WarpSignLink.removeByLocation(block.getLocation());
                 EventListener.removePendingDeletion(playerToDelete.getUniqueId());
                 return true;
 
