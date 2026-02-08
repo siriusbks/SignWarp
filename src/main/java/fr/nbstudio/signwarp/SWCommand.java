@@ -34,7 +34,7 @@ public class SWCommand implements CommandExecutor, TabCompleter {
                 }
                 Player player = (Player) sender;
                 if (!player.hasPermission("signwarp.admin")) {
-                    player.sendMessage(ChatColor.RED + plugin.getConfig().getString("messages.not_permission",
+                    player.sendMessage(ChatColor.RED + plugin.getConfig().getString("messages.error.no-permission",
                             "You don't have permission to use this command."));
                     return true;
                 }
@@ -43,7 +43,7 @@ public class SWCommand implements CommandExecutor, TabCompleter {
 
             case "reload":
                 if (!sender.hasPermission("signwarp.reload")) {
-                    sender.sendMessage(ChatColor.RED + plugin.getConfig().getString("messages.not_permission",
+                    sender.sendMessage(ChatColor.RED + plugin.getConfig().getString("messages.error.no-permission",
                             "You don't have permission to use this command."));
                     return true;
                 }

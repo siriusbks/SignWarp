@@ -1,39 +1,64 @@
-# Item required to use a warp sign (none to disable)
-use-item: ENDER_PEARL
+# ======================================================
+#                 SignWarp Configuration
+# ======================================================
 
-# Number of items consumed by using a warp sign
-use-cost: 1
+# Settings related to teleportation
+teleport:
+  # Time in seconds before teleporting
+  cooldown: 5
+  
+  # Show an action bar countdown (e.g. "Teleportation in 3s...")
+  action-bar: true
+  
+  # Visuals and Sounds
+  sound:
+    # Sound played every second during the countdown
+    warmup: BLOCK_NOTE_BLOCK_PLING
+    # Sound played when teleportation occurs
+    success: ENTITY_ENDERMAN_TELEPORT
+  
+  # Particle effect shown around the player during countdown
+  particle: PORTAL
 
-# Time in seconds before teleporting
-teleport-cooldown: 5
+# Costs to use a Warp Sign
+costs:
+  # Economy cost (requires Vault). Set to 0.0 to disable.
+  money: 0.0
+  
+  # Item cost. Set amount to 0 to disable.
+  item:
+    material: ENDER_PEARL
+    amount: 0
 
-# Cost of teleporting (0 to disable)
-teleport-cost: 0
-
-# Sound played when teleporting
-teleport-sound: ENTITY_ENDERMAN_TELEPORT
-
-# Effect displayed when teleporting
-teleport-effect: ENDER_SIGNAL
-
-# Custom messages
+# Custom Messages
+# Supports color codes (&).
 messages:
-  create_permission: "&cYou do not have the required permissions to create warp signs!"
-  no_warp_name: "&cNo warp name set!\nPlease specify the warp name on the second line."
-  warp_created: "&aWarp sign successfully placed."
-  warp_name_taken: "&cA warp target with the same name already exists!"
-  warp_destroyed: "&aWarp destroyed."
-  target_sign_created: "&aTarget sign for warp successfully placed."
-  destroy_permission: "&cYou do not have the required permissions to destroy warp signs!"
-  invalid_item: "&cYou must use {use-item} for this warp!"
-  not_enough_item: "&cYou need {use-cost} {use-item} for this warp!"
-  warp_not_found: "&cSpecified warp does not exist!"
-  use_permission: "&cYou do not have the required permissions to use the warp sign!"
-  teleport: "&eTeleporting to {warp-name} in {time} seconds..."
-  teleport-success: "&aSuccessfully teleported to {warp-name}."
-  teleport-cancelled: "&cTeleport cancelled."
-  notify-cost: "&aYou have been charged {cost} currency for the teleportation."
-  not_permission: "&cYou do not have permission!"
-  limit_reached: "&cYou have reached your warp creation limit ({limit})."
-  warp_sign_removed: "&aWarp sign removed successfully!"
-  no_bidirectional_link: "&cNo return point found for this warp!"
+  prefix: "&8[&bSignWarp&8] "
+  
+  error:
+    no-permission: "&cYou do not have permission."
+    create-permission: "&cYou do not have permission to create warp signs!"
+    destroy-permission: "&cYou do not have permission to destroy warp signs!"
+    use-permission: "&cYou do not have permission to use this warp!"
+    
+    no-money: "&cYou don't have enough money ({cost}) to teleport."
+    no-item: "&cYou need {amount} {item} to use this warp."
+    invalid-item: "&cYou must hold {item} to use this warp."
+    
+    warp-not-found: "&cThis warp does not exist!"
+    warp-exists: "&cA warp with this name already exists!"
+    no-warp-name: "&cPlease specify a warp name on the second line."
+    
+    no-link: "&cNo return point found for this warp!"
+    limit-reached: "&cYou have reached your limit of {limit} warps."
+    
+  success:
+    warp-created: "&aWarp sign created successfully."
+    target-created: "&aTarget sign created successfully."
+    warp-removed: "&aWarp sign removed."
+    warp-deleted: "&cWarp deleted from database."
+    
+    teleport-start: "&eTeleporting in {time}s..."
+    teleport-done: "&aTeleported to {warp}!"
+    teleport-cancelled: "&cTeleportation cancelled."
+    transaction: "&aYou paid {cost} for this teleport."
