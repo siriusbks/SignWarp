@@ -14,12 +14,13 @@ public final class SignWarp extends JavaPlugin implements Listener {
             + RESOURCE_ID + "/";
 
     public void onEnable() {
-        // Check for updates
-        new UpdateChecker(this, RESOURCE_ID).getVersion(version -> {
-            if (this.getDescription().getVersion().equals(version)) {
+        // Update check
+        final String currentVersion = getDescription().getVersion();
+        new UpdateChecker(this, RESOURCE_ID).getVersion(latest -> {
+            if (currentVersion.equals(latest)) {
                 getLogger().info("No new version available");
             } else {
-                getLogger().warning("A new version of the plugin is available: " + version + " (current: "
+                getLogger().warning("A new version of the plugin is available: " + latest + " (current: "
                         + this.getDescription().getVersion() + "). Download it here: " + PLUGIN_URL);
             }
         });
@@ -44,6 +45,7 @@ public final class SignWarp extends JavaPlugin implements Listener {
 
         // Initialize database and migrate table if needed
         Warp.createTable();
+        WarpSignLink.createTable();
 
         // Register commands and tab completer
         PluginCommand command = getCommand("signwarp");

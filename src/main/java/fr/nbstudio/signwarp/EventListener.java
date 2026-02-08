@@ -17,15 +17,12 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.server.PluginEnableEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.permissions.PermissionAttachmentInfo;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class EventListener implements Listener {
     private final SignWarp plugin;
@@ -34,7 +31,6 @@ public class EventListener implements Listener {
     private final HashSet<UUID> invinciblePlayers = new HashSet<>();
     private final HashMap<UUID, Double> pendingTeleportCosts = new HashMap<>();
     private final HashMap<UUID, Integer> pendingItemCosts = new HashMap<>();
-    private static final HashMap<UUID, Block> pendingDeletions = new HashMap<>();
 
     EventListener(SignWarp plugin) {
         this.plugin = plugin;
@@ -44,14 +40,6 @@ public class EventListener implements Listener {
     // method static to update the config
     public static void updateConfig(JavaPlugin plugin) {
         config = plugin.getConfig();
-    }
-
-    public static Block getPendingDeletion(UUID playerUUID) {
-        return pendingDeletions.get(playerUUID);
-    }
-
-    public static void removePendingDeletion(UUID playerUUID) {
-        pendingDeletions.remove(playerUUID);
     }
 
     @EventHandler
@@ -71,7 +59,8 @@ public class EventListener implements Listener {
         if (!player.hasPermission("signwarp.create")) {
             String noPermissionMessage = config.getString("messages.create_permission");
             if (noPermissionMessage != null) {
-                player.sendMessage(ChatColor.translateAlternateColorCodes('&', noPermissionMessage));
+                player.sendMessage(
+                        ChatColor.translateAlternateColorCodes('&', noPermissionMessage));
             }
             event.setCancelled(true);
             return;
@@ -86,19 +75,40 @@ public class EventListener implements Listener {
             return;
         }
 
+        if (signData.isWarpTarget()) {
+            int warpLimit = getWarpLimit(player);
+            if (warpLimit != -1) {
+                long currentWarps = Warp.getAll().size();
+
+                if (currentWarps >= warpLimit) {
+                    String limitMessage = config.getString("messages.limit_reached",
+                            "&cYou have reached your warp creation limit ({limit}).");
+                    player.sendMessage(ChatColor.translateAlternateColorCodes('&',
+                            limitMessage.replace("{limit}", String.valueOf(warpLimit))));
+                    event.setCancelled(true);
+                    return;
+                }
+            }
+        }
+
         Warp existingWarp = Warp.getByName(signData.warpName);
 
         if (signData.isWarp()) {
             if (existingWarp == null) {
                 String warpNotFoundMessage = config.getString("messages.warp_not_found");
                 if (warpNotFoundMessage != null) {
-                    player.sendMessage(ChatColor.translateAlternateColorCodes('&', warpNotFoundMessage));
+                    player.sendMessage(
+                            ChatColor.translateAlternateColorCodes('&', warpNotFoundMessage));
                 }
                 event.setCancelled(true);
                 return;
             }
 
             event.setLine(0, ChatColor.BLUE + SignData.HEADER_WARP);
+
+            // Track the warp sign location for bi-directional teleportation
+            WarpSignLink warpLink = new WarpSignLink(signData.warpName, event.getBlock().getLocation(), "WARP");
+            warpLink.save();
 
             String warpCreatedMessage = config.getString("messages.warp_created");
             if (warpCreatedMessage != null) {
@@ -108,7 +118,8 @@ public class EventListener implements Listener {
             if (existingWarp != null) {
                 String warpNameTakenMessage = config.getString("messages.warp_name_taken");
                 if (warpNameTakenMessage != null) {
-                    player.sendMessage(ChatColor.translateAlternateColorCodes('&', warpNameTakenMessage));
+                    player.sendMessage(
+                            ChatColor.translateAlternateColorCodes('&', warpNameTakenMessage));
                 }
                 event.setCancelled(true);
                 return;
@@ -120,11 +131,35 @@ public class EventListener implements Listener {
 
             event.setLine(0, ChatColor.BLUE + SignData.HEADER_TARGET);
 
+            // Track the target sign location for bi-directional teleportation
+            WarpSignLink targetLink = new WarpSignLink(signData.warpName, event.getBlock().getLocation(), "TARGET");
+            targetLink.save();
+
             String targetSignCreatedMessage = config.getString("messages.target_sign_created");
             if (targetSignCreatedMessage != null) {
-                player.sendMessage(ChatColor.translateAlternateColorCodes('&', targetSignCreatedMessage));
+                player.sendMessage(
+                        ChatColor.translateAlternateColorCodes('&', targetSignCreatedMessage));
             }
         }
+    }
+
+    private int getWarpLimit(Player player) {
+        if (player.hasPermission("signwarp.limit.unlimited"))
+            return -1;
+
+        int maxLimit = -1;
+        for (PermissionAttachmentInfo permInfo : player.getEffectivePermissions()) {
+            String perm = permInfo.getPermission();
+            if (perm.startsWith("signwarp.limit.")) {
+                try {
+                    int limit = Integer.parseInt(perm.substring("signwarp.limit.".length()));
+                    if (limit > maxLimit)
+                        maxLimit = limit;
+                } catch (NumberFormatException ignored) {
+                }
+            }
+        }
+        return maxLimit;
     }
 
     @EventHandler
@@ -147,7 +182,7 @@ public class EventListener implements Listener {
 
         SignData signData = new SignData(signBlock.getSide(Side.FRONT).getLines());
 
-        if (!signData.isWarpTarget()) {
+        if (!signData.isWarpSign()) {
             return;
         }
 
@@ -160,46 +195,29 @@ public class EventListener implements Listener {
         if (!player.hasPermission("signwarp.create")) {
             String noPermissionMessage = config.getString("messages.destroy_permission");
             if (noPermissionMessage != null) {
-                player.sendMessage(ChatColor.translateAlternateColorCodes('&', noPermissionMessage));
+                player.sendMessage(
+                        ChatColor.translateAlternateColorCodes('&', noPermissionMessage));
             }
             event.setCancelled(true);
             return;
         }
 
-        Warp warp = Warp.getByName(signData.warpName);
+        // Remove the sign link for bi-directional support
+        WarpSignLink.removeByLocation(block.getLocation());
 
-        if (warp == null) {
-            return;
-        }
-
-        if (!player.hasPermission("signwarp.break")) {
-            player.sendMessage(ChatColor.RED + "You do not have permission to break Warp signs.");
-            event.setCancelled(true);
-            return;
-        }
-
-        event.setCancelled(true);
-
-        if (pendingDeletions.containsKey(player.getUniqueId())) {
-            player.sendMessage(ChatColor.YELLOW
-                    + "You already have a pending Warp sign deletion. Type /signwarp confirmwarpdelete to confirm.");
-            return;
-        }
-
-        pendingDeletions.put(player.getUniqueId(), block);
-        player.sendMessage(ChatColor.YELLOW
-                + "Are you sure you want to delete this Warp sign? Type /signwarp confirmwarpdelete within 10 seconds to confirm.");
-
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (pendingDeletions.containsKey(player.getUniqueId())
-                        && pendingDeletions.get(player.getUniqueId()).equals(block)) {
-                    pendingDeletions.remove(player.getUniqueId());
-                    player.sendMessage(ChatColor.RED + "Warp deletion request expired.");
-                }
+        // Only remove the warp itself if it's a target sign
+        if (signData.isWarpTarget()) {
+            Warp warp = Warp.getByName(signData.warpName);
+            if (warp != null) {
+                warp.remove();
+                player.sendMessage(ChatColor.translateAlternateColorCodes('&',
+                        config.getString("messages.warp_destroyed")));
             }
-        }.runTaskLater(plugin, 200);
+        } else {
+            // For warp signs, just notify that the sign was removed
+            player.sendMessage(ChatColor.translateAlternateColorCodes('&',
+                    config.getString("messages.warp_sign_removed", "&aWarp sign removed successfully!")));
+        }
     }
 
     @EventHandler
@@ -227,7 +245,8 @@ public class EventListener implements Listener {
             signBlock.update();
         }
 
-        if (!signData.isWarp() || !signData.isValidWarpName()) {
+        // Check if it's a valid warp sign (either [Warp] or [WarpTarget])
+        if (!signData.isWarpSign() || !signData.isValidWarpName()) {
             return;
         }
 
@@ -236,12 +255,13 @@ public class EventListener implements Listener {
         if (!player.hasPermission("signwarp.use")) {
             String noPermissionMessage = config.getString("messages.use_permission");
             if (noPermissionMessage != null) {
-                player.sendMessage(ChatColor.translateAlternateColorCodes('&', noPermissionMessage));
+                player.sendMessage(
+                        ChatColor.translateAlternateColorCodes('&', noPermissionMessage));
             }
             return;
         }
 
-        double teleportCost = config.getDouble("teleport-cost", 100.0); // Default cost
+        double teleportCost = config.getDouble("teleport-cost", 0.0);
         String useItem = config.getString("use-item", "none");
         int useCost = config.getInt("use-cost", 0);
 
@@ -265,7 +285,15 @@ public class EventListener implements Listener {
 
             // Temporarily store the teleport cost to be deducted after teleportation
             pendingTeleportCosts.put(player.getUniqueId(), teleportCost);
-            teleportPlayer(player, signData.warpName, true, teleportCost);
+
+            // For bi-directional teleportation
+            if (signData.isWarpTarget()) {
+                // Teleport from target back to warp sign
+                teleportPlayerBidirectional(player, signData.warpName, "TARGET", true, teleportCost);
+            } else {
+                // Original teleport from warp to target
+                teleportPlayer(player, signData.warpName, true, teleportCost);
+            }
         } else if (teleportCost == 0.0 && useItem != null) {
             // Case where a specific item is required and the teleportation cost is 0
             Material itemInHand = event.getMaterial();
@@ -274,24 +302,42 @@ public class EventListener implements Listener {
                 if (useCost > event.getItem().getAmount()) {
                     String notEnoughItemMessage = config.getString("messages.not_enough_item");
                     if (notEnoughItemMessage != null) {
-                        player.sendMessage(ChatColor.translateAlternateColorCodes('&', notEnoughItemMessage
-                                .replace("{use-cost}", String.valueOf(useCost)).replace("{use-item}", useItem)));
+                        player.sendMessage(ChatColor.translateAlternateColorCodes('&',
+                                notEnoughItemMessage.replace("{use-cost}", String.valueOf(useCost))
+                                        .replace("{use-item}", useItem)));
                     }
                     return;
                 }
 
                 pendingItemCosts.put(player.getUniqueId(), useCost);
-                teleportPlayer(player, signData.warpName, false, 0);
+
+                // For bi-directional teleportation
+                if (signData.isWarpTarget()) {
+                    // Teleport from target back to warp sign
+                    teleportPlayerBidirectional(player, signData.warpName, "TARGET", false, 0);
+                } else {
+                    // Original teleport from warp to target
+                    teleportPlayer(player, signData.warpName, false, 0);
+                }
             } else {
                 String invalidItemMessage = config.getString("messages.invalid_item");
                 if (invalidItemMessage != null) {
-                    player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                            invalidItemMessage.replace("{use-item}", useItem != null ? useItem : "an item")));
+                    player.sendMessage(
+                            ChatColor.translateAlternateColorCodes('&', invalidItemMessage
+                                    .replace("{use-item}", useItem != null ? useItem : "an item")));
                 }
             }
         } else if (teleportCost == 0.0 && useItem == null) {
             // Case where neither an item nor a teleportation cost is required
-            teleportPlayer(player, signData.warpName, false, 0);
+
+            // For bi-directional teleportation
+            if (signData.isWarpTarget()) {
+                // Teleport from target back to warp sign
+                teleportPlayerBidirectional(player, signData.warpName, "TARGET", false, 0);
+            } else {
+                // Original teleport from warp to target
+                teleportPlayer(player, signData.warpName, false, 0);
+            }
         } else {
             // Case where both item and money can be used for teleportation
             player.sendMessage(ChatColor.RED + "You must use an item or pay to teleport.");
@@ -304,7 +350,8 @@ public class EventListener implements Listener {
         if (warp == null) {
             String warpNotFoundMessage = config.getString("messages.warp_not_found");
             if (warpNotFoundMessage != null) {
-                player.sendMessage(ChatColor.translateAlternateColorCodes('&', warpNotFoundMessage));
+                player.sendMessage(
+                        ChatColor.translateAlternateColorCodes('&', warpNotFoundMessage));
             }
             return;
         }
@@ -313,8 +360,9 @@ public class EventListener implements Listener {
 
         String teleportMessage = config.getString("messages.teleport");
         if (teleportMessage != null) {
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&', teleportMessage
-                    .replace("{warp-name}", warp.getName()).replace("{time}", String.valueOf(cooldown))));
+            player.sendMessage(ChatColor.translateAlternateColorCodes('&',
+                    teleportMessage.replace("{warp-name}", warp.getName()).replace("{time}",
+                            String.valueOf(cooldown))));
         }
 
         UUID playerUUID = player.getUniqueId();
@@ -336,7 +384,12 @@ public class EventListener implements Listener {
             String soundName = config.getString("teleport-sound", "ENTITY_ENDERMAN_TELEPORT");
             String effectName = config.getString("teleport-effect", "ENDER_SIGNAL");
 
-            Sound sound = Sound.valueOf(soundName);
+            Sound sound;
+            try {
+                sound = Sound.valueOf(soundName);
+            } catch (IllegalArgumentException e) {
+                sound = Sound.ENTITY_ENDERMAN_TELEPORT; // fallback to default
+            }
             Effect effect = Effect.valueOf(effectName);
 
             World world = targetLocation.getWorld();
@@ -347,6 +400,96 @@ public class EventListener implements Listener {
             if (successMessage != null) {
                 player.sendMessage(ChatColor.translateAlternateColorCodes('&',
                         successMessage.replace("{warp-name}", warp.getName())));
+            }
+
+            // Deduct cost after successful teleportation
+            if (useEconomy) {
+                Double teleportCost = pendingTeleportCosts.remove(playerUUID);
+                if (teleportCost != null) {
+                    Economy economy = VaultEconomy.getEconomy();
+                    economy.withdrawPlayer(player, teleportCost);
+
+                    // Notify the player of the cost
+                    String notifyCostMessage = config.getString("messages.notify-cost");
+                    if (notifyCostMessage != null) {
+                        player.sendMessage(ChatColor.translateAlternateColorCodes('&',
+                                notifyCostMessage.replace("{cost}", String.valueOf(teleportCost))));
+                    }
+                }
+            } else {
+                Integer itemCost = pendingItemCosts.remove(playerUUID);
+                if (itemCost != null && itemCost > 0) {
+                    Material itemInHand = player.getInventory().getItemInMainHand().getType();
+                    player.getInventory().removeItem(new ItemStack(itemInHand, itemCost));
+                }
+            }
+
+            // Remove the task from the map after completion
+            teleportTasks.remove(playerUUID);
+            // Remove the player from the invincible list
+            invinciblePlayers.remove(playerUUID);
+
+        }, cooldown * 20L); // 20 ticks = 1 second
+
+        // Store the task in the map
+        teleportTasks.put(playerUUID, teleportTask);
+    }
+
+    private void teleportPlayerBidirectional(Player player, String warpName, String currentSignType, boolean useEconomy,
+            double cost) {
+        // Find the opposite end location
+        Location targetLocation = WarpSignLink.getOtherEndLocation(warpName, currentSignType);
+
+        if (targetLocation == null) {
+            String noLinkMessage = config.getString("messages.no_bidirectional_link",
+                    "&cNo return point found for this warp!");
+            player.sendMessage(ChatColor.translateAlternateColorCodes('&', noLinkMessage));
+            return;
+        }
+
+        int cooldown = config.getInt("teleport-cooldown", 5);
+
+        String teleportMessage = config.getString("messages.teleport");
+        if (teleportMessage != null) {
+            player.sendMessage(ChatColor.translateAlternateColorCodes('&',
+                    teleportMessage.replace("{warp-name}", warpName).replace("{time}",
+                            String.valueOf(cooldown))));
+        }
+
+        UUID playerUUID = player.getUniqueId();
+
+        // Cancel any previous teleport tasks for the player
+        BukkitTask previousTask = teleportTasks.get(playerUUID);
+        if (previousTask != null) {
+            previousTask.cancel();
+        }
+
+        // Add the player to the invincible list
+        invinciblePlayers.add(playerUUID);
+
+        // Schedule the new teleport task
+        BukkitTask teleportTask = Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            player.teleport(targetLocation);
+
+            String soundName = config.getString("teleport-sound", "ENTITY_ENDERMAN_TELEPORT");
+            String effectName = config.getString("teleport-effect", "ENDER_SIGNAL");
+
+            Sound sound;
+            try {
+                sound = Sound.valueOf(soundName);
+            } catch (IllegalArgumentException e) {
+                sound = Sound.ENTITY_ENDERMAN_TELEPORT; // fallback to default
+            }
+            Effect effect = Effect.valueOf(effectName);
+
+            World world = targetLocation.getWorld();
+            world.playSound(targetLocation, sound, 1, 1);
+            world.playEffect(targetLocation, effect, 10);
+
+            String successMessage = config.getString("messages.teleport-success");
+            if (successMessage != null) {
+                player.sendMessage(ChatColor.translateAlternateColorCodes('&',
+                        successMessage.replace("{warp-name}", warpName)));
             }
 
             // Deduct cost after successful teleportation
@@ -411,20 +554,8 @@ public class EventListener implements Listener {
     public void onEntityDamage(EntityDamageEvent event) {
         if (event.getEntity() instanceof Player) {
             Player player = (Player) event.getEntity();
-            UUID playerUUID = player.getUniqueId();
-            if (teleportTasks.containsKey(playerUUID)) {
-                // Cancel teleport instead of cancelling damage
-                BukkitTask task = teleportTasks.remove(playerUUID);
-                if (task != null) {
-                    task.cancel();
-                }
-                invinciblePlayers.remove(playerUUID);
-                pendingTeleportCosts.remove(playerUUID);
-                pendingItemCosts.remove(playerUUID);
-
-                String cancelMessage = config.getString("messages.teleport-cancelled-damage",
-                        "&cTeleportation cancelled due to damage.");
-                player.sendMessage(ChatColor.translateAlternateColorCodes('&', cancelMessage));
+            if (invinciblePlayers.contains(player.getUniqueId())) {
+                event.setCancelled(true);
             }
         }
     }
